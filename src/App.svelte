@@ -27,7 +27,7 @@
   const draftIsSaved = $derived(!!draft && lists.some((l) => l.id === draft!.id));
   const draftProblem = $derived(draft ? listProblem(draft) : null);
   // a long quote is set smaller, so it fits the widget
-  const quoteSize = $derived(!quote ? 9 : quote.text.length > 180 ? 5.5 : quote.text.length > 100 ? 7 : 9);
+  const quoteSize = $derived(!quote ? 12 : quote.text.length > 180 ? 8.5 : quote.text.length > 100 ? 10.5 : 12);
 
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
@@ -145,7 +145,7 @@
 
 <div class="card" class:widget={view === 'widget'} style="--page: {palette.page}; --card: {palette.card}; --card-inner: {palette.cardInner}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {palette.danger}; --scale: {scale};">
   {#if view === 'widget'}
-    <div class="balloon" style="--balloon: {widgetList?.color ?? '#C47ADA'}">
+    <div class="balloon">
       <div class="head">
         <span>{widgetList?.emoji ?? '💬'}</span>
         <span class="title">{widgetList?.name ?? 'Quotes'}</span>
@@ -155,7 +155,7 @@
       {:else if !quote}
         <p class="muted">This list has no quotes yet.</p>
       {:else}
-        <button class="quote" onclick={tapQuote} style="font-size: clamp(11px, calc({quoteSize} * 1cqmin * var(--scale)), 30px);">
+        <button class="quote" onclick={tapQuote} style="font-size: clamp(12px, calc({quoteSize} * 1cqmin * var(--scale)), 34px);">
           <span class="text">“{quote.text}”</span>
           {#if quote.author}<span class="author">— {quote.author}</span>{/if}
         </button>
@@ -243,7 +243,8 @@
 
 <style>
   .card { box-sizing: border-box; min-height: 100vh; padding: 16px; background: var(--page); color: var(--text); font-size: calc(16px * var(--scale)); line-height: 1.4; }
-  .card.widget { container-type: size; min-height: 0; height: 100vh; padding: 10px 12px; font-size: calc(14px * var(--scale)); display: flex; flex-direction: column; }
+  /* the widget card is the card colour of the app; the quote sits directly on it */
+  .card.widget { container-type: size; min-height: 0; height: 100vh; padding: 10px 12px; background: var(--card); font-size: calc(16px * var(--scale)); display: flex; flex-direction: column; }
   h1 { margin: 0; font-size: calc(26px * var(--scale)); font-weight: 700; }
   h2 { margin: 20px 0 6px; font-size: calc(13px * var(--scale)); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
   .muted { margin: 4px 0; color: var(--muted); }
@@ -274,8 +275,8 @@
   .ghost { display: block; width: 100%; margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; background: var(--fill); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
   .danger { display: block; width: 100%; margin-top: 10px; padding: 12px; border: 0; border-radius: 12px; background: transparent; color: var(--danger); font: inherit; cursor: pointer; }
   .problem { margin: 12px 0 0; color: var(--danger); }
-  /* the speech balloon of v1, in the colour of the list: the quote is set in the middle, the author under it */
-  .balloon { display: flex; flex: 1; flex-direction: column; min-height: 0; border-radius: 18px; padding: 10px 12px; background: color-mix(in srgb, var(--balloon) 18%, var(--card)); }
+  /* the quote is set in the middle of the card, the author under it */
+  .balloon { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   .head { display: flex; align-items: center; gap: 6px; font-size: calc(12px * var(--scale)); font-weight: 600; color: var(--muted); }
   .quote { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 4px; min-height: 0; padding: 4px 2px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
   .quote .text { font-style: italic; line-height: 1.25; flex: 0 1 auto; }
