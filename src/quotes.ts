@@ -69,7 +69,7 @@ export const normaliseLists = (saved: unknown): QuoteList[] => {
         kind,
         name: String(l.name ?? '').trim() || KIND_NAMES[kind],
         description: String(l.description ?? ''),
-        emoji: String(l.emoji ?? ''),
+        emoji: String(l.emoji ?? '').trim() || '💬',
         color: isColour(l.color) ? l.color : COLOURS[0],
         quotes: kind === 'custom' ? cleanQuotes(l.quotes) : [],
       },
@@ -83,6 +83,8 @@ export const quotesOf = (list: QuoteList): Quote[] => (list.kind === 'custom' ? 
 // The first thing wrong with a list, or null when it can be saved
 export const listProblem = (list: QuoteList): string | null => {
   if (!list.name.trim()) return 'Give the list a name.';
+  // the widget settings of the dashboard need a name and an emoji for every list
+  if (!list.emoji.trim()) return 'Choose an emoji for the quote list.';
   if (list.kind === 'custom' && cleanQuotes(list.quotes).length === 0) return 'Add at least one quote.';
   return null;
 };

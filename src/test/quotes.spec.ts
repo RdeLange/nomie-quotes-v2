@@ -39,6 +39,11 @@ describe('the lists', () => {
 });
 
 describe('saving a list', () => {
+  it('needs a name and an emoji, because the dashboard settings list it by both', () => {
+    expect(listProblem(mine({ emoji: ' ' }))).toBeTruthy();
+    expect(normaliseLists([{ id: '7', kind: 'custom', emoji: '' }])[0].emoji).toBe('💬');
+  });
+
   it('needs a name, and a custom list needs a quote with text', () => {
     expect(listProblem(mine({ name: ' ' }))).toBeTruthy();
     expect(listProblem(mine({ quotes: [{ text: ' ', author: 'A' }] }))).toBeTruthy();
