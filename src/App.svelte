@@ -29,6 +29,10 @@
   // a long quote is set smaller, so it fits the widget
   // The size of the widget: the frame the plugin is drawn in, read again when the widget is resized
   let frame = $state({ width: window.innerWidth, height: window.innerHeight });
+  // Read the frame again: when the widget opens, and whenever the frame is resized
+  const readFrame = () => {
+    frame = { width: window.innerWidth, height: window.innerHeight };
+  };
 
   // The largest quote size that still fits the frame, with the app's text size on top. Words are wrapped at about half
   // the font size per character, and the header, the padding and the author line take their share of the height.
@@ -145,10 +149,11 @@
       applyNomieValues();
       await ensureLoaded();
     });
-    window.addEventListener('resize', () => {
-      frame = { width: window.innerWidth, height: window.innerHeight };
-    });
+    window.addEventListener('resize', readFrame);
+    // the body fills the frame, so a change of the frame size shows here too
+    new ResizeObserver(readFrame).observe(document.body);
     plugin.onWidget(async () => {
+      readFrame();
       view = 'widget';
       applyNomieValues();
       await loadWidget();
