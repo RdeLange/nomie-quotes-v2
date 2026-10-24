@@ -27,7 +27,23 @@
   const draftIsSaved = $derived(!!draft && lists.some((l) => l.id === draft!.id));
   const draftProblem = $derived(draft ? listProblem(draft) : null);
   // a long quote is set smaller, so it fits the widget
-  const quoteSize = $derived(!quote ? 12 : quote.text.length > 180 ? 8.5 : quote.text.length > 100 ? 10.5 : 12);
+  // The size of the widget: the frame the plugin is drawn in, read again when the widget is resized
+  let frame = $state({ width: window.innerWidth, height: window.innerHeight });
+
+  // The largest quote size that still fits the frame, with the app's text size on top. Words are wrapped at about half
+  // the font size per character, and the header, the padding and the author line take their share of the height.
+  const fittedSize = (text: string, width: number, height: number, multiplier: number): number => {
+    const available = height - 56;
+    for (let size = 48; size > 12; size--) {
+      const px = size * multiplier;
+      const perLine = Math.max(1, Math.floor((width - 24) / (px * 0.5)));
+      const lines = Math.ceil(text.length / perLine);
+      const needed = lines * px * 1.3 + px * 1.2;
+      if (needed <= available) return px;
+    }
+    return 12 * multiplier;
+  };
+  const quotePx = $derived(quote ? fittedSize(quote.text, frame.width, frame.height, scale) : 16 * scale);
 
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
@@ -129,6 +145,9 @@
       applyNomieValues();
       await ensureLoaded();
     });
+    window.addEventListener('resize', () => {
+      frame = { width: window.innerWidth, height: window.innerHeight };
+    });
     plugin.onWidget(async () => {
       view = 'widget';
       applyNomieValues();
@@ -155,7 +174,7 @@
       {:else if !quote}
         <p class="muted">This list has no quotes yet.</p>
       {:else}
-        <button class="quote" onclick={tapQuote} style="font-size: clamp(12px, calc({quoteSize} * 1cqmin * var(--scale)), 34px);">
+        <button class="quote" onclick={tapQuote} style="font-size: {quotePx}px;">
           <span class="text">“{quote.text}”</span>
           {#if quote.author}<span class="author">— {quote.author}</span>{/if}
         </button>
@@ -277,7 +296,7 @@
   .problem { margin: 12px 0 0; color: var(--danger); }
   /* the quote is set in the middle of the card, the author under it */
   .balloon { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-  .head { display: flex; align-items: center; gap: 6px; font-size: calc(12px * var(--scale)); font-weight: 600; color: var(--muted); }
+  .head { display: flex; align-items: center; gap: 6px; font-size: calc(15px * var(--scale)); font-weight: 600; color: var(--muted); }
   .quote { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 4px; min-height: 0; padding: 4px 2px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
   .quote .text { font-style: italic; line-height: 1.25; flex: 0 1 auto; }
   .quote .author { align-self: flex-end; font-weight: 600; color: var(--muted); font-size: 0.75em; }
