@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { cleanQuotes, defaultLists, KICK_STARTER, KIND_NAMES, COLOURS, listProblem, newList, normaliseLists, quoteOfDay, quotesOf, reflectionNote, type Quote, type QuoteList } from './quotes';
-  import { paletteFrom, type Palette } from './palette';
+  import { paletteFrom, glassFrom, tintTextFrom, dangerTextFrom, type Palette, type Glass } from './palette';
+  import { t, setLanguage } from './i18n/index.svelte';
   import { onPrefsChange } from './prefs-live';
 
   // the presets as a new user can start from them
@@ -10,6 +11,9 @@
   let plugin: any;
   let view = $state<'modal' | 'widget'>('modal');
   let palette = $state<Palette>(paletteFrom(undefined));
+  let glass = $state<Glass>(glassFrom(undefined));
+  let tintText = $state(tintTextFrom(undefined));
+  let dangerText = $state(dangerTextFrom(undefined));
   let scale = $state(1);
 
   // the modal: the list of quote lists, the choice of a starting point, or the editor of one list
@@ -52,6 +56,10 @@
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
     palette = paletteFrom(plugin.prefs);
+    setLanguage(plugin.prefs?.language);
+    glass = glassFrom(plugin.prefs);
+    tintText = tintTextFrom(plugin.prefs);
+    dangerText = dangerTextFrom(plugin.prefs);
     scale = plugin.prefs.fontScale || 1;
   };
 
@@ -120,7 +128,7 @@
   const deleteDraft = async () => {
     if (!draft) return;
     const gone = draft;
-    const res = await plugin.confirm('Delete quote list?', `"${gone.name}" is removed. A dashboard widget that shows it will say it is gone.`);
+    const res = await plugin.confirm(t('deleteQ'), t('deleteBody', { name: gone.name }));
     if (!res?.value) return;
     lists = lists.filter((l) => l.id !== gone.id);
     await save();
@@ -167,17 +175,17 @@
   });
 </script>
 
-<div class="card" class:widget={view === 'widget'} style="--page: {palette.page}; --card: {palette.card}; --card-inner: {palette.cardInner}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {palette.danger}; --scale: {scale};">
+<div class="card" class:widget={view === 'widget'} style="--page: {palette.page}; --card: {palette.card}; --card-inner: {palette.cardInner}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {dangerText}; --tint-text: {tintText}; --glass-fill: {glass.fill}; --glass-edge: {glass.edge}; --glass-blur: {glass.blur}; --glass-shadow: {glass.shadow}; --scale: {scale};">
   {#if view === 'widget'}
     <div class="balloon">
       <div class="head">
         <span>{widgetList?.emoji ?? '💬'}</span>
-        <span class="title">{widgetList?.name ?? 'Quotes'}</span>
+        <span class="title">{widgetList?.name ?? t('title')}</span>
       </div>
       {#if status === 'missing'}
-        <p class="muted">This widget points at a quote list that is gone. Pick another one in the widget settings.</p>
+        <p class="muted">{t('goneWidget')}</p>
       {:else if !quote}
-        <p class="muted">This list has no quotes yet.</p>
+        <p class="muted">{t('noQuotesList')}</p>
       {:else}
         <button class="quote" onclick={tapQuote} style="font-size: {quotePx}px;">
           <span class="text">“{quote.text}”</span>
@@ -186,9 +194,12 @@
       {/if}
     </div>
   {:else}
+    <header class="top">
+      {#if screen !== 'list'}<button class="link" onclick={() => (screen = 'list')}>‹ {t('back')}</button>{/if}
+      <h1>{screen === 'list' ? t('title') : draftIsSaved && draft ? draft.name || t('wordsQuote') : t('newList')}</h1>
+    </header>
     {#if screen === 'list'}
-      <h1>Quotes</h1>
-      <p class="muted">A quote for the day, on your dashboard.</p>
+      <p class="muted">{t('dayIntro')}</p>
 
       <section class="panel">
         {#each lists as list (list.id)}
@@ -198,74 +209,75 @@
               <span class="title">{list.name}</span>
               <span class="muted">{list.description || KIND_NAMES[list.kind]}</span>
             </span>
-            <span class="muted">{list.kind === 'custom' ? `${list.quotes.length}` : `${quotesOf(list).length}`} quotes</span>
+            <span class="muted">{t('quoteCount', { n: list.kind === 'custom' ? list.quotes.length : quotesOf(list).length })}</span>
           </button>
         {:else}
-          <p class="muted pad">No quote lists yet. Add one to show on your dashboard.</p>
+          <p class="muted pad">{t('noListsYet')}</p>
         {/each}
       </section>
-      <button class="primary" onclick={() => (screen = 'choose')}>New quote list</button>
+      <button class="primary" onclick={() => (screen = 'choose')}>{t('newList')}</button>
     {:else if screen === 'choose'}
-      <button class="link" onclick={() => (screen = 'list')}>‹ Back</button>
-      <h1>New quote list</h1>
-      <p class="muted">Start from one of these, or from your own quotes.</p>
+      <p class="muted">{t('chooseIntro')}</p>
       <div class="chips">
         {#each PRESET_LIST as preset (preset.id)}
           <button onclick={() => startNew(presetBase(preset))}>{preset.emoji} {preset.name}</button>
         {/each}
-        <button onclick={() => startNew({ kind: 'custom', name: '', description: '', emoji: '💬', color: COLOURS[0], quotes: [{ text: '', author: '' }] })}>✏️ Your own quotes</button>
+        <button onclick={() => startNew({ kind: 'custom', name: '', description: '', emoji: '💬', color: COLOURS[0], quotes: [{ text: '', author: '' }] })}>✏️ {t('ownQuotes')}</button>
         <button onclick={() => startNew(KICK_STARTER)}>{KICK_STARTER.emoji} {KICK_STARTER.name}</button>
       </div>
     {:else if draft}
-      <button class="link" onclick={() => (screen = 'list')}>‹ Back</button>
-      <h1>{draftIsSaved ? draft.name || 'Quote list' : 'New quote list'}</h1>
 
       <section class="panel">
         <label class="field">
-          <span class="muted">Name</span>
-          <input class="input" bind:value={draft.name} placeholder="My quotes" />
+          <span class="muted">{t('name')}</span>
+          <input class="input" bind:value={draft.name} placeholder={t('namePlaceholder')} />
         </label>
         <label class="field">
-          <span class="muted">Description</span>
-          <input class="input" bind:value={draft.description} placeholder="What the quotes are about" />
+          <span class="muted">{t('description')}</span>
+          <input class="input" bind:value={draft.description} placeholder={t('descPlaceholder')} />
         </label>
         <label class="field">
-          <span class="muted">Emoji</span>
+          <span class="muted">{t('emoji')}</span>
           <input class="input emoji" bind:value={draft.emoji} maxlength="4" />
         </label>
       </section>
 
-      <h2>Colour</h2>
+      <h2>{t('colour')}</h2>
       <section class="panel swatches">
         {#each COLOURS as c (c)}
-          <button class="swatch" class:picked={draft.color === c} style="background: {c}" aria-label="Use this colour" onclick={() => (draft!.color = c)}></button>
+          <button class="swatch" class:picked={draft.color === c} style="background: {c}" aria-label={t('useColour')} onclick={() => (draft!.color = c)}></button>
         {/each}
       </section>
 
       {#if draft.kind === 'custom'}
-        <h2>Quotes</h2>
+        <h2>{t('quotesHead')}</h2>
         {#each draft.quotes as quoteRow, i (i)}
           <section class="panel quote-editor">
-            <textarea class="input" rows="3" bind:value={quoteRow.text} placeholder="The quote"></textarea>
+            <textarea class="input" rows="3" bind:value={quoteRow.text} placeholder={t('quotePlaceholder')}></textarea>
             <div class="author-row">
-              <input class="input" bind:value={quoteRow.author} placeholder="Author" />
-              <button class="icon danger-text" onclick={() => removeQuote(i)} aria-label="Remove this quote">🗑️</button>
+              <input class="input" bind:value={quoteRow.author} placeholder={t('authorPlaceholder')} />
+              <button class="icon danger-text" onclick={() => removeQuote(i)} aria-label={t('removeQuote')}>🗑️</button>
             </div>
           </section>
         {/each}
         <button class="ghost" onclick={addQuote}>Add a quote</button>
       {:else}
-        <p class="muted">{KIND_NAMES[draft.kind]} has {quotesOf(draft).length} quotes that come with the plugin. Only the name, emoji and colour can change.</p>
+        <p class="muted">{KIND_NAMES[draft.kind]} {t('listNote', { n: quotesOf(draft).length })}</p>
       {/if}
 
       {#if draftProblem}<p class="problem">{draftProblem}</p>{/if}
-      <button class="primary" onclick={saveDraft} disabled={!!draftProblem}>Save</button>
-      {#if draftIsSaved}<button class="danger" onclick={deleteDraft}>Delete quote list</button>{/if}
+      <button class="primary" onclick={saveDraft} disabled={!!draftProblem}>{t('save')}</button>
+      {#if draftIsSaved}<button class="danger" onclick={deleteDraft}>{t('deleteList')}</button>{/if}
     {/if}
   {/if}
 </div>
 
 <style>
+  /* the app's text: its iOS font stack, and the rounded face for numbers (PLG-LF-07, PLG-LF-08) */
+  :global(body) { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; -webkit-font-smoothing: antialiased; --ios-font-rounded: ui-rounded, -apple-system, system-ui, sans-serif; }
+  /* the header is a Liquid Glass bar (D-glass): the title and the back link stay at the top, and the content scrolls under them */
+  .top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; margin: -16px -16px 8px; padding: 16px 16px 10px; background: var(--glass-fill); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-bottom: 1px solid var(--glass-edge); }
+  .top h1 { margin: 0; }
   .card { box-sizing: border-box; min-height: 100vh; padding: 16px; background: var(--page); color: var(--text); font-size: calc(16px * var(--scale)); line-height: 1.4; }
   /* the widget card is the card colour of the app; the quote sits directly on it */
   .card.widget { container-type: size; min-height: 0; height: 100vh; padding: 10px 12px; background: var(--card); font-size: calc(16px * var(--scale)); display: flex; flex-direction: column; }

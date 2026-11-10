@@ -1,3 +1,4 @@
+import { t } from './i18n/index.svelte';
 // The quote lists: the two Stoic lists, lists the user makes, the quote of the day, and the note a quote opens.
 // The screens only show what this module works out.
 import stoicEn from './data/stoic-en.json';
@@ -20,22 +21,22 @@ export type QuoteList = {
   quotes: Quote[];
 };
 
-export const KIND_NAMES: Record<Kind, string> = { 'stoic-en': 'Stoic English', 'stoic-nl': 'Stoic Nederlands', custom: 'Your own quotes' };
+export const KIND_NAMES: Record<Kind, string> = { get 'stoic-en'() { return t('kindStoicEn'); }, get 'stoic-nl'() { return t('kindStoicNl'); }, get custom() { return t('kindCustom'); } };
 export const COLOURS = ['#C47ADA', '#FF2D55', '#FF9500', '#34C759', '#00C7BE', '#007AFF', '#5856D6', '#AF52DE', '#A2845E', '#8E8E93', '#FF3B30', '#30B0C7'];
 
 const KINDS: Kind[] = ['stoic-en', 'stoic-nl', 'custom'];
 const STOIC: Record<'stoic-en' | 'stoic-nl', Quote[]> = { 'stoic-en': stoicEn, 'stoic-nl': stoicNl };
 
 const PRESETS: Array<Omit<QuoteList, 'id'>> = [
-  { kind: 'stoic-en', name: 'Stoic-en', description: 'The Stoic teachers, in English', emoji: '🏛️', color: '#C47ADA', quotes: [] },
-  { kind: 'stoic-nl', name: 'Stoic-nl', description: 'The same Stoic teachers, in Dutch', emoji: '🏛️', color: '#C47ADA', quotes: [] },
+  { kind: 'stoic-en', name: 'Stoic-en', get description() { return t('descStoicEn'); }, emoji: '🏛️', color: '#C47ADA', quotes: [] },
+  { kind: 'stoic-nl', name: 'Stoic-nl', get description() { return t('descStoicNl'); }, emoji: '🏛️', color: '#C47ADA', quotes: [] },
 ];
 
 // The starter a new user can pick, as in v1
 export const KICK_STARTER: Omit<QuoteList, 'id'> = {
   kind: 'custom',
   name: 'Kick Starter',
-  description: 'A simple quote list to start with',
+  get description() { return t('descKick'); },
   emoji: '𓇬',
   color: '#C47ADA',
   quotes: [{ text: 'Nomie has been a labor of love for me for the past 8 years, and I am deeply grateful for the support and loyalty of the community.', author: '❤️ Brandon' }],
@@ -82,10 +83,10 @@ export const quotesOf = (list: QuoteList): Quote[] => (list.kind === 'custom' ? 
 
 // The first thing wrong with a list, or null when it can be saved
 export const listProblem = (list: QuoteList): string | null => {
-  if (!list.name.trim()) return 'Give the list a name.';
+  if (!list.name.trim()) return t('errName');
   // the widget settings of the dashboard need a name and an emoji for every list
-  if (!list.emoji.trim()) return 'Choose an emoji for the quote list.';
-  if (list.kind === 'custom' && cleanQuotes(list.quotes).length === 0) return 'Add at least one quote.';
+  if (!list.emoji.trim()) return t('errEmoji');
+  if (list.kind === 'custom' && cleanQuotes(list.quotes).length === 0) return t('errQuotes');
   return null;
 };
 
