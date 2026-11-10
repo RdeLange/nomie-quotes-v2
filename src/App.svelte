@@ -260,7 +260,7 @@
             </div>
           </section>
         {/each}
-        <button class="ghost" onclick={addQuote}>Add a quote</button>
+        <button class="ghost" onclick={addQuote}>{t('addQuote')}</button>
       {:else}
         <p class="muted">{KIND_NAMES[draft.kind]} {t('listNote', { n: quotesOf(draft).length })}</p>
       {/if}
